@@ -1,6 +1,7 @@
 """Utility functions for JellyfinDownloader."""
 
 import re
+from pathlib import Path
 
 def sanitize_filename(s: str) -> str:
     """Remove invalid characters from filename."""
@@ -22,6 +23,41 @@ def episode_filename(item: dict, default_ext: str = ".mp4") -> str:
 
     return sanitize_filename(base) + default_ext
 
+def media_extension(item: dict, default_ext: str) -> str:
+    """Determine a reasonable file extension from the media source."""
+    ms = item.get("MediaSources") or []
+    if ms and isinstance(ms, list) and isinstance(ms[0], dict):
+        path = ms[0].get("Path")
+        if path:
+            suffix = Path(path).suffix
+            if suffix:
+                return suffix
+
+        container = (ms[0].get("Container") or "").split(",")[0].strip(" .")
+        if container:
+            return f".{container.lower()}"
+
+    return default_ext
+
+def music_artist(item: dict) -> str:
+    """Get the preferred artist name for a music item."""
+    artists = item.get("Artists") or []
+    return item.get("AlbumArtist") or (artists[0] if artists else None) or "Unknown Artist"
+
+def music_filename(item: dict, default_ext: str = ".mp3") -> str:
+    """Generate filename for a music track."""
+    artist = music_artist(item)
+    album = item.get("Album") or "Unknown Album"
+    track = safe_int(item.get("IndexNumber"))
+    title = item.get("Name") or "Untitled"
+
+    if track is not None:
+        base = f"{artist} - {album} - {track:02d} - {title}"
+    else:
+        base = f"{artist} - {album} - {title}"
+
+    return sanitize_filename(base) + media_extension(item, default_ext)
+
 def safe_int(x):
     """Safely convert to int, returning None on failure."""
     try:
@@ -37,3 +73,13 @@ def format_episode_label(item):
     if s is not None and e is not None:
         return f"S{s:02d}E{e:02d} - {name}"
     return name
+
+def format_music_label(item):
+    """Format music track label for display."""
+    artist = music_artist(item)
+    album = item.get("Album") or "Unknown Album"
+    track = safe_int(item.get("IndexNumber"))
+    name = item.get("Name") or "Untitled"
+
+    prefix = f"{track:02d} - " if track is not None else ""
+    return f"{artist} / {album} / {prefix}{name}"

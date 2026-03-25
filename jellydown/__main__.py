@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from .config import load_config, save_config
 from .api import jget, authenticate
-from .ui import handle_series, handle_movies, settings_menu
+from .ui import handle_series, handle_movies, handle_music, settings_menu
 
 def main():
     """Main application entry point."""
@@ -74,7 +74,8 @@ def main():
         print("\n--- Main Menu ---")
         print("1. Series")
         print("2. Movies")
-        print("3. Settings")
+        print("3. Music")
+        print("4. Settings")
         print("q. Quit")
 
         choice = input("Select an option: ").strip().lower()
@@ -84,6 +85,8 @@ def main():
         elif choice == "2":
             handle_movies(base, api_key, user_id, cfg)
         elif choice == "3":
+            handle_music(base, api_key, user_id, cfg)
+        elif choice == "4":
             settings_menu(cfg)
         elif choice == "q":
             sys.exit(0)

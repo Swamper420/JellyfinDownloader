@@ -5,9 +5,16 @@ import math
 from pathlib import Path
 
 from .config import save_config
-from .api import jget, build_stream_url
+from .api import jget, build_stream_url, build_download_url
 from .download import download_stream, download_direct, should_skip_transcode
-from .utils import sanitize_filename, episode_filename, safe_int, format_episode_label
+from .utils import (
+    sanitize_filename,
+    episode_filename,
+    music_filename,
+    safe_int,
+    format_episode_label,
+    format_music_label,
+)
 
 def prompt_int(prompt: str, default: int = 1, min_value: int = 1, max_value: int = 9999) -> int:
     """Prompt user for an integer with validation."""
@@ -195,6 +202,29 @@ def handle_movies(base, api_key, user_id, cfg):
             
         process_download_or_stream(base, api_key, movies, selected_index, cfg)
 
+def handle_music(base, api_key, user_id, cfg):
+    """Handle music browsing and download."""
+    from .api import list_library_items
+
+    music_items = list_library_items(
+        base,
+        api_key,
+        user_id,
+        "Audio",
+        fields="MediaSources,Album,AlbumArtist,Artists,IndexNumber,Name",
+    )
+    if not music_items:
+        print("No music found.")
+        return
+
+    while True:
+        music_opts = [{"label": format_music_label(track), "value": i} for i, track in enumerate(music_items)]
+        selected_index = pick(music_opts, title="Music")
+        if selected_index in (None, "BACK"):
+            break
+
+        process_download_or_stream(base, api_key, music_items, selected_index, cfg)
+
 def process_download_or_stream(base, api_key, items, selected_index, cfg):
     """Process download or streaming for selected item."""
     def get_stream_url(item: dict) -> str:
@@ -212,16 +242,21 @@ def process_download_or_stream(base, api_key, items, selected_index, cfg):
 
         return build_stream_url(base, api_key, item_id, cfg, media_source_id=media_source_id)
 
+    def get_media_url(item: dict) -> str:
+        if item.get("Type") == "Audio":
+            return build_download_url(base, api_key, item["Id"])
+        return get_stream_url(item)
+
     target_item = items[selected_index]
-    url = get_stream_url(target_item)
-    print("\nStream URL:")
+    url = get_media_url(target_item)
+    print("\nMedia URL:")
     print(url)
     
     dl = input("\nDownload? (y/N): ").strip().lower()
     if dl == "y":
         count = 1
         # Only ask for count if it's a series episode (not a movie)
-        if target_item.get("Type") != "Movie" and len(items) > 1 and selected_index < len(items) - 1:
+        if target_item.get("Type") == "Episode" and len(items) > 1 and selected_index < len(items) - 1:
              print("\nYou can download multiple items in sequence. If you want your choice and the next 2 episodes, enter 3.")
              count = prompt_int("How many items to download (including this one)? [default 1]: ", default=1)
         
@@ -243,10 +278,12 @@ def process_download_or_stream(base, api_key, items, selected_index, cfg):
 
         for i in range(selected_index, min(len(items), selected_index + count)):
             item = items[i]
-            stream_url = get_stream_url(item)
+            stream_url = get_media_url(item)
             # For movies, episode_filename might produce weird results if fields missing, but defaults should handle it
             if item.get("Type") == "Movie":
                 filename = sanitize_filename(item.get("Name") or "Movie") + ".mp4"
+            elif item.get("Type") == "Audio":
+                filename = music_filename(item)
             else:
                 filename = episode_filename(item, ".mp4")
                 
@@ -255,6 +292,10 @@ def process_download_or_stream(base, api_key, items, selected_index, cfg):
             print(f"\nDownloading {filename}")
             print(f"-> {output_path}")
             
+            if item.get("Type") == "Audio":
+                download_direct(base, api_key, item["Id"], output_path)
+                continue
+
             # Check if transcode is needed
             bitrate = cfg.get("VideoBitrate", 4_000_000)
             if should_skip_transcode(item, bitrate):

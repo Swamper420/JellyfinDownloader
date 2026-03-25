@@ -1,6 +1,6 @@
 # JellyfinDownloader
 
-A Python script for downloading movies and TV series from your Jellyfin media server. Downloads streams directly from Jellyfin with server-side transcoding, or download original files without any transcoding.
+A Python script for downloading movies, TV series, and music from your Jellyfin media server. Downloads streams directly from Jellyfin with server-side transcoding, or download original files without any transcoding.
 
 Transcoding happens server-side just like normal Jellyfin streaming, allowing you to take advantage of your server's hardware acceleration capabilities. Downloads typically run 10-20x faster than real-time, making it quick and efficient.
 
@@ -9,6 +9,7 @@ Transcoding happens server-side just like normal Jellyfin streaming, allowing yo
 - **Flexible Download Options**: Download original files or transcode to your preferred quality
 - **Smart Transcoding**: Automatically skips transcoding if the original file is already optimal
 - **Series Support**: Download multiple episodes in sequence
+- **Music Support**: Browse and download tracks from your Jellyfin music library
 - **Customizable Settings**: Configure video/audio codecs, bitrates, and channels
 - **Persistent Configuration**: Remembers your server, credentials, and download preferences
 - **Progress Tracking**: Visual progress indicators for downloads
@@ -104,16 +105,17 @@ pip3 install requests
 ```
 1. Series    - Browse and download TV series
 2. Movies    - Browse and download movies
-3. Settings  - Configure transcoding options
+3. Music     - Browse and download music tracks
+4. Settings  - Configure transcoding options
 q. Quit
 ```
 
 ### Downloading Content
 
-1. Select **Series** or **Movies**
+1. Select **Series**, **Movies**, or **Music**
 2. Browse through the available content (use `n`/`p` for pagination)
 3. Select an item by entering its number
-4. Review the stream URL
+4. Review the media URL
 5. Type `y` to download
 6. For series: Choose how many episodes to download in sequence
 7. Specify output directory (or press Enter to use the saved path)
