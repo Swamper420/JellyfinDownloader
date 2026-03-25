@@ -54,11 +54,20 @@ def build_stream_url(base, api_key, item_id, cfg, media_source_id=None):
 
     return f"{base.rstrip('/')}/Videos/{item_id}/stream.mp4?{urlencode(params)}"
 
-def list_library_items(base, api_key, user_id, item_type):
+def build_download_url(base, api_key, item_id):
+    """Build direct download URL for an item."""
+    params = {
+        "api_key": api_key,
+    }
+    return f"{base.rstrip('/')}/Items/{item_id}/Download?{urlencode(params)}"
+
+def list_library_items(base, api_key, user_id, item_type, fields=None):
     """List all items of a given type from user's library."""
     start_index = 0
     limit = 200
     all_items = []
+    if fields is None:
+        fields = "PrimaryImageAspectRatio,MediaSources"
 
     while True:
         data = jget(
@@ -68,7 +77,7 @@ def list_library_items(base, api_key, user_id, item_type):
                 "Recursive": "true",
                 "SortBy": "SortName",
                 "SortOrder": "Ascending",
-                "Fields": "PrimaryImageAspectRatio,MediaSources",
+                "Fields": fields,
                 "StartIndex": start_index,
                 "Limit": limit,
             }
