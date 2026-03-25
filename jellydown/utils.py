@@ -39,10 +39,14 @@ def media_extension(item: dict, default_ext: str) -> str:
 
     return default_ext
 
+def music_artist(item: dict) -> str:
+    """Get the preferred artist name for a music item."""
+    artists = item.get("Artists") or []
+    return item.get("AlbumArtist") or (artists[0] if artists else None) or "Unknown Artist"
+
 def music_filename(item: dict, default_ext: str = ".mp3") -> str:
     """Generate filename for a music track."""
-    artists = item.get("Artists") or []
-    artist = item.get("AlbumArtist") or (artists[0] if artists else None) or "Unknown Artist"
+    artist = music_artist(item)
     album = item.get("Album") or "Unknown Album"
     track = safe_int(item.get("IndexNumber"))
     title = item.get("Name") or "Untitled"
@@ -72,8 +76,7 @@ def format_episode_label(item):
 
 def format_music_label(item):
     """Format music track label for display."""
-    artists = item.get("Artists") or []
-    artist = item.get("AlbumArtist") or (artists[0] if artists else None) or "Unknown Artist"
+    artist = music_artist(item)
     album = item.get("Album") or "Unknown Album"
     track = safe_int(item.get("IndexNumber"))
     name = item.get("Name") or "Untitled"
